@@ -1,0 +1,31 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>Voltage Monitor</title>
+<meta name="description" content="Voltage Monitor">
+<meta http-equiv="Content-Type" content="text/html; charset=utf8">
+<link href="/static/css/style.css" rel="stylesheet">
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="/static/js/functions.js"></script>
+</head>
+
+<body>
+	<div style="font-weight: bold; font-size: 7pt; text-align:left;" id="mini-content" align="left">
+		
+		<table class="state">
+			<tr>
+				<td class="lblCell_R">
+					<select onchange="SelectSensor()" style="height:25px; width:110px; font-weight: bold; font-size: 8pt;" id="sensorlist"></select>
+					<td>|</td>
+					<td class="label">Sensor: </td>
+					<td id="sensor_label" class="input"></td>
+					<td>| Current Volts: </td>
+					<td id="current_voltage">0V</td>
+				</td>				
+			</tr>
+		</table>
+			<img src="" id="plot_img_mini" value="">
+	</div>
+	<script type="text/javascript">setTimeout("RefreshSensorList()",10);</script>
+</body>
+</html>

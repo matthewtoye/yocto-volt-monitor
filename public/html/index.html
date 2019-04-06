@@ -1,0 +1,86 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>Voltage Monitor</title>
+<meta name="description" content="Voltage Monitor .">
+<meta http-equiv="Content-Type" content="text/html; charset=utf8">
+<link href="/static/css/style.css" rel="stylesheet">
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="/static/js/functions.js"></script>
+</head>
+
+<body>
+	<h1>Voltage Monitor</h1>
+	<select onchange="SelectSensor()" id="sensorlist">
+	</select> <br/> <br/>
+	<div id="content" align="center">
+		<table class="state">
+			<tr>
+				<td>
+					<td style="font-weight: bold; font-size: 20pt; text-align:left;" id="current_voltage">0V</td>
+					<td class="vl"></td>
+					
+				</td>
+				<td>
+					<table>
+						<tr >
+							<td style="font-weight: bold; font-size: 12pt; text-align:right;" class="label">Sensor: </td>
+							<td id="sensor_label" class="input"></td>
+						</tr>
+						<tr >
+							<td style="font-weight: bold; font-size: 12pt; text-align:right;" class="label">Send email to: </td>
+							<td class="input"><input type="text" style="height:19px; width:170px;" id="dest_email"  value=""></td>
+						</tr>
+						<tr >
+							<td style="font-weight: bold; font-size: 12pt; text-align:right;" class="label">Your IP: </td>
+							<td id="your_ip" style="font-weight: bold; text-align:center;" class="input">0.0.0.0</td>
+						</tr>
+						<tr >
+							<td style="font-weight: bold; font-size: 12pt; text-align:right;" class="label">IP in control: </td>
+							<td id="ip_in_control" style="font-weight: bold; text-align:center;" class="input">0.0.0.0</td>
+							<td><a class="button" href="javascript:take_control();" id="take_control">Take Control</a></td>
+						</tr>
+					</table>
+				</td>
+				
+			</tr>
+		</table>
+		<table class="state" style="font-weight: bold; font-size: 12pt;text-align:right;">
+					<tr>
+						<td></td>
+						<td style="font-weight: bold; font-size: 8pt;text-align:right;">Enabled?<input type="checkbox" onchange="toggle_enabled()" id="enabled"></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td style="font-weight: bold; font-size: 8pt;text-align:right;">Stop recording when target reached?<input type="checkbox" onchange="toggle_stop_when_target_reached()" id="stop_when_target_reached"></td>
+					</tr>
+					<tr>
+						<td class="text">When</td>
+						<td id="ddone" class="lblCell_R">
+							<select id='type_of_check' onchange="type_dropdown_changed()" style="height:19px; width:170px;">
+							   <option id="voltage">voltage</option>
+							   <option id="time">time</option>
+							   <option id="test">test</option>
+							</select>
+						</td>
+						<td class="text">is</td>
+						<td id="ddtwo" class="lblCell_R">
+							<select id='method_to_use' onchange="method_dropdown_changed()" style="height:19px; width:170px;">
+							</select>
+						</td>
+						<td class="input"><input type="text" style="font-weight: bold; text-align:center;" id="target_value" value="" size="10"></td>
+						<td id="type_of_check_text" align="right" class="text"></td>
+						<td><a class="button" id="recording" style="visibility: hidden" href="javascript:toggle_recording();">Start Recording</a></td>
+					</tr>
+		</table>
+			<div id="img_div">
+				<span id="stopwatch" style="font-weight: bold; font-size: 10pt; color: red; visibility: hidden">0 Seconds</span><br/>
+				<span id="current_module" style="font-weight: bold; font-size: 10pt; color: red; visibility: hidden">Recording Module: 1</span><br/>
+				<span id="module_recording_status" style="font-weight: bold; font-size: 10pt; color: red; visibility: hidden">disabled</span><br/>
+				<img src="" id="plot_img" value="">
+			</div>
+	</div>
+	<script type="text/javascript">setTimeout("RefreshSensorList()",10);</script>
+</body>
+</html>
