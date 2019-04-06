@@ -126,6 +126,30 @@ def SendEmail(strFrom, strTo, msgRoot):
     if Options.verbose:
         print("Email successfully sent.")
 
+def SendWelcomeEmail():
+    # Create the body of the message (a plain-text and an HTML version).
+    base_link = "http://%s:%d" % (MyIP, Options.http_port)
+    link = base_link + "/"
+    text = "Hi!\n The Voltage Monitor v1.0 has been started\n\nYou can start the monitoring with the following link\n%s" \
+           % link
+    f = open("public/html/welcomemail.html")
+    html = f.read()
+    html = html.replace("YYYSERVERYYY", base_link)
+    f.close()
+    # Create the root message and fill in the from, to, and subject headers
+    msgRoot = MIMEMultipart('related')
+    msgRoot['Subject'] = "Voltage Monitor Started "
+    msgRoot.preamble = 'This is a multi-part message in MIME format.'
+    # Encapsulate the plain and HTML versions of the message body in an
+    # 'alternative' part, so message agents can decide which they want to display.
+    msgAlternative = MIMEMultipart('alternative')
+    msgRoot.attach(msgAlternative)
+    msgText = MIMEText(text)
+    msgAlternative.attach(msgText)
+    # We reference the image in the IMG SRC attribute by the ID we give it below
+    msgText = MIMEText(html, 'html')
+    msgAlternative.attach(msgText)
+    SendEmail(Options.email, Options.email, msgRoot)
 
 class voltage_recorder(threading.Thread):
     def __init__(self, sensor, defaultEmail):
@@ -367,11 +391,13 @@ class voltage_recorder(threading.Thread):
             sp.annotate('%sV' %j, xy=(i,j), xytext=(5,0), textcoords='offset points')
 
         fig1.savefig(self._plot_file_location)
-        plt.tight_layout()
-        plt.gcf().subplots_adjust(bottom=0.16)
-        plt.gcf().subplots_adjust(left=0.19)
+        plt.gcf().subplots_adjust(left=0.005, right=0.85, bottom=0.15, top=0.99)
         sp2 = fig2.add_subplot(111)
+        sp2.tick_params(axis='both', which='major', labelsize=7)
+        sp2.tick_params(axis='both', which='minor', labelsize=7)
         sp2.plot(self._recording_data_x, self._recording_data_y, color="red")
+        sp2.yaxis.set_label_position("right")
+        sp2.yaxis.tick_right()
         sp2.set_ylabel("Voltage")
         sp2.set_xlabel("Time (minutes)")
         
@@ -606,29 +632,7 @@ def main():
     print(' Done (%s)' % MyIP)
 
     if Options.email != "":
-        # Create the body of the message (a plain-text and an HTML version).
-        base_link = "http://%s:%d" % (MyIP, Options.http_port)
-        link = base_link + "/"
-        text = "Hi!\n The Voltage Monitor v1.0 has been started\n\nYou can start the charging with the following link\n%s" \
-               % link
-        f = open("public/html/welcomemail.html")
-        html = f.read()
-        html = html.replace("YYYSERVERYYY", base_link)
-        f.close()
-        # Create the root message and fill in the from, to, and subject headers
-        msgRoot = MIMEMultipart('related')
-        msgRoot['Subject'] = "Voltage Monitor Started "
-        msgRoot.preamble = 'This is a multi-part message in MIME format.'
-        # Encapsulate the plain and HTML versions of the message body in an
-        # 'alternative' part, so message agents can decide which they want to display.
-        msgAlternative = MIMEMultipart('alternative')
-        msgRoot.attach(msgAlternative)
-        msgText = MIMEText(text)
-        msgAlternative.attach(msgText)
-        # We reference the image in the IMG SRC attribute by the ID we give it below
-        msgText = MIMEText(html, 'html')
-        msgAlternative.attach(msgText)
-        SendEmail(Options.email, Options.email, msgRoot)
+        SendWelcomeEmail()
     else:
         print("No default email configured (skip email configuration test)")
         
