@@ -21,7 +21,7 @@ function SelectSensor(){
 	// disable updates temporarily while we update the page with information pertaining to selected sensor
 	clearInterval(updateForever);
 	first_refresh();
-	updateForever = setInterval("update_server()",2000);
+	updateForever = setInterval("update_server()",1000);
 	
 }
 
@@ -108,6 +108,7 @@ function update_server() {
 				document.getElementById("module_recording_status").innerHTML = data["module_recording_status"];
 				document.getElementById("ip_in_control").innerHTML = data['ip_in_control'];
 				document.getElementById("dest_email").value = data["email"];
+				toggle_recording(data);
 				
 				// If we are not in control, update page with data so we know if it changes
 				if (document.getElementById("ip_in_control").innerHTML != document.getElementById("your_ip").innerHTML) {
@@ -115,14 +116,8 @@ function update_server() {
 					type_dropdown_changed(data);
 					method_dropdown_changed(data);
 					toggle_enabled(data);
-					toggle_recording(data);
 					toggle_stop_when_target_reached(data);	
 				}
-				// only update the recording button if we are transitioning from stop to start or start to stop
-				if (document.getElementById("recording").innerHTML = "Please Wait..") {
-					toggle_recording(data);
-				}
-				
 				take_control(data);
 			}
 		},
@@ -266,6 +261,25 @@ function toggle_enabled(js_obj) {
 		update_needed = true;
 	}
 }
+function toggle_control(in_control) {
+	if (in_control) {
+		// Enable all input
+		document.getElementById("dest_email").disabled = false;	
+		document.getElementById("target_value").disabled = false;
+		document.getElementById("enabled").disabled = false;
+		document.getElementById("method_to_use").disabled = false;
+		document.getElementById("type_of_check").disabled = false;
+		document.getElementById("stop_when_target_reached").disabled = false;
+	} else {
+		// Enable all input
+		document.getElementById("dest_email").disabled = true;	
+		document.getElementById("target_value").disabled = true;
+		document.getElementById("enabled").disabled = true;
+		document.getElementById("method_to_use").disabled = true;
+		document.getElementById("type_of_check").disabled = true;
+		document.getElementById("stop_when_target_reached").disabled = true;
+	}
+}
 
 function take_control(js_obj) {
 	// Used only for the refresh
@@ -276,11 +290,13 @@ function take_control(js_obj) {
 			// We are in control - hide the take control button
 			if (js_obj["your_ip"] == js_obj["ip_in_control"]) {
 				document.getElementById("take_control").style.visibility = "hidden";	
+				toggle_control(true);			
 			}
 			
 			// We are not in control
 			else {
 				document.getElementById("take_control").style.visibility = "visible";
+				toggle_control(false);
 			}
 		} 
 	}
@@ -291,6 +307,7 @@ function take_control(js_obj) {
 		if (document.getElementById("take_control").style.visibility = "visible") {	
 			document.getElementById("take_control").style.visibility = "hidden";	
 			document.getElementById("ip_in_control").innerHTML = document.getElementById("your_ip").innerHTML;
+			toggle_control(true);
 		} 
 		update_needed = true;
 	}
@@ -310,9 +327,13 @@ function toggle_recording(js_obj) {
 		}
 		
 		// Turn on recording - Update recording button text based on current recording status
-		if (js_obj["recording"]) {	
-			document.getElementById("recording").innerHTML = "Stop Recording";
-			document.getElementById("recording").value = "True";		
+		if (js_obj["recording"]) {
+			if (document.getElementById("recording").innerHTML == "Starting.." || 
+			document.getElementById("ip_in_control").innerHTML != document.getElementById("your_ip").innerHTML) 
+			{
+				document.getElementById("recording").innerHTML = "Stop Recording";
+				document.getElementById("recording").value = "True";	
+			}
 		} 
 		
 		// Turn off recording
@@ -324,10 +345,10 @@ function toggle_recording(js_obj) {
 	
 	// Used when recording button is pressed
 	else {
-		document.getElementById("recording").innerHTML = "Please Wait..";
-		
+
 		// Turn on recording
 		if (document.getElementById("recording").value == "False") {	
+			document.getElementById("recording").innerHTML = "Starting..";
 			document.getElementById("recording").value = "True";
 				
 			if (document.getElementById("method_to_use").value == "test") {
@@ -340,6 +361,7 @@ function toggle_recording(js_obj) {
 		// Turn off recording
 		else {
 			document.getElementById("recording").value = "False";
+			document.getElementById("recording").innerHTML = "Stopping..";
 			
 			if (document.getElementById("method_to_use").value == "test") {
 				document.getElementById("current_module").style.visibility = "hidden";

@@ -29,7 +29,7 @@
 						</tr>
 						<tr >
 							<td style="font-weight: bold; font-size: 12pt; text-align:right;" class="label">Send email to: </td>
-							<td class="input"><input type="text" style="height:19px; width:170px;" id="dest_email"  value=""></td>
+							<td class="input"><input type="text" style="height:19px; width:170px;" id="dest_email"  value="" disabled></td>
 						</tr>
 						<tr >
 							<td style="font-weight: bold; font-size: 12pt; text-align:right;" class="label">Your IP: </td>
@@ -48,17 +48,17 @@
 		<table class="state" style="font-weight: bold; font-size: 12pt;text-align:right;">
 					<tr>
 						<td></td>
-						<td style="font-weight: bold; font-size: 8pt;text-align:right;">Enabled?<input type="checkbox" onchange="toggle_enabled()" id="enabled"></td>
+						<td style="font-weight: bold; font-size: 8pt;text-align:right;">Enabled?<input type="checkbox" onchange="toggle_enabled()" id="enabled" disabled></td>
 						<td></td>
 						<td></td>
 						<td></td>
 						<td></td>
-						<td style="font-weight: bold; font-size: 8pt;text-align:right;">Stop recording when target reached?<input type="checkbox" onchange="toggle_stop_when_target_reached()" id="stop_when_target_reached"></td>
+						<td style="font-weight: bold; font-size: 8pt;text-align:right;">Stop recording when target reached?<input type="checkbox" onchange="toggle_stop_when_target_reached()" id="stop_when_target_reached" disabled></td>
 					</tr>
 					<tr>
 						<td class="text">When</td>
 						<td id="ddone" class="lblCell_R">
-							<select id='type_of_check' onchange="type_dropdown_changed()" style="height:19px; width:170px;">
+							<select id='type_of_check' onchange="type_dropdown_changed()" style="height:19px; width:170px;" disabled>
 							   <option id="voltage">voltage</option>
 							   <option id="time">time</option>
 							   <option id="test">test</option>
@@ -66,10 +66,10 @@
 						</td>
 						<td class="text">is</td>
 						<td id="ddtwo" class="lblCell_R">
-							<select id='method_to_use' onchange="method_dropdown_changed()" style="height:19px; width:170px;">
+							<select id='method_to_use' onchange="method_dropdown_changed()" style="height:19px; width:170px;" disabled>
 							</select>
 						</td>
-						<td class="input"><input type="text" style="font-weight: bold; text-align:center;" id="target_value" value="" size="10"></td>
+						<td class="input"><input type="text" style="font-weight: bold; text-align:center;" id="target_value" value="" size="10" disabled></td>
 						<td id="type_of_check_text" align="right" class="text"></td>
 						<td><a class="button" id="recording" style="visibility: hidden" href="javascript:toggle_recording();">Start Recording</a></td>
 					</tr>

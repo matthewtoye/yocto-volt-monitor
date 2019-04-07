@@ -377,11 +377,13 @@ class voltage_recorder(threading.Thread):
         
         plt.rcParams['xtick.direction'] = 'in'
         plt.rcParams['ytick.direction'] = 'in'
-        fig1 = plt.figure(figsize=(8,6))
-        fig2 = plt.figure(figsize=(4.7, 2.6))
+        
+        fig1 = plt.figure(figsize=(12,6))
         
         plt.minorticks_on()
         plt.margins(x=0)
+        plt.gcf().subplots_adjust(left=0.07, right=0.93, bottom=0.08, top=0.99)
+		
         sp = fig1.add_subplot(111)
         sp.plot(self._recording_data_x, self._recording_data_y, color="red")
         sp.set_ylabel("Voltage")
@@ -391,7 +393,13 @@ class voltage_recorder(threading.Thread):
             sp.annotate('%sV' %j, xy=(i,j), xytext=(5,0), textcoords='offset points')
 
         fig1.savefig(self._plot_file_location)
+        
+        fig2 = plt.figure(figsize=(4.7, 2.6))
+        
+        plt.minorticks_on()
+        plt.margins(x=0)
         plt.gcf().subplots_adjust(left=0.005, right=0.85, bottom=0.15, top=0.99)
+        
         sp2 = fig2.add_subplot(111)
         sp2.tick_params(axis='both', which='major', labelsize=7)
         sp2.tick_params(axis='both', which='minor', labelsize=7)
