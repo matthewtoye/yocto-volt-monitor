@@ -43,7 +43,7 @@ function RefreshSensorList() {
 				el.textContent = opt['name'];
 				el.value = opt['id'];
 				select.appendChild(el);
-				console.log("completed refreshsensorlist")
+				//console.log("completed refreshsensorlist")
 				
 				if (!first_run) {
 					first_run = true;
@@ -158,10 +158,27 @@ function type_dropdown_changed(js_obj) {
 			el.value = "elapsed for";
 			dropdown.appendChild(el);
 		break;
-		case "test":
+		/*case "load test":
 			el = document.createElement("option");
-			el.textContent = "test";
-			el.value = "test";
+			el.textContent = "load test";
+			el.value = "load test";
+			dropdown.appendChild(el);
+		break;*/
+		case "load test":
+			el = document.createElement("option");
+			el.textContent = "time";
+			el.value = "time";
+			dropdown.appendChild(el);
+			
+			el = document.createElement("option");
+			el.textContent = "voltage";
+			el.value = "voltage";
+			dropdown.appendChild(el);
+		break;
+		case "voltage check":
+			el = document.createElement("option");
+			el.textContent = "voltage check";
+			el.value = "voltage check";
 			dropdown.appendChild(el);
 		break;
 	}
@@ -181,13 +198,18 @@ function method_dropdown_changed(js_obj) {
 	switch (document.getElementById("method_to_use").value) {
 		case "higher than":
 		case "lower than":
+		case "voltage":
 		default:
 			document.getElementById("type_of_check_text").innerHTML = "Volts";
 		break;
 		case "highest value for":
 		case "elapsed for":
-		case "test":
+		case "load test":
+		case "time":
 			document.getElementById("type_of_check_text").innerHTML = "Minutes";
+		break;
+		case "voltage check":
+			document.getElementById("type_of_check_text").innerHTML = "N/A";
 		break;
 	}
 	
@@ -311,6 +333,10 @@ function take_control(js_obj) {
 		} 
 		update_needed = true;
 	}
+	
+	if (document.getElementById("method_to_use").value == "voltage check") {
+		document.getElementById("target_value").disabled = true;
+	}
 }
 
 function toggle_recording(js_obj) {
@@ -325,21 +351,37 @@ function toggle_recording(js_obj) {
 		else {
 			document.getElementById("recording").style.visibility = "hidden";
 		}
-		
+
 		// Turn on recording - Update recording button text based on current recording status
 		if (js_obj["recording"]) {
-			if (document.getElementById("recording").innerHTML == "Starting.." || 
+			document.getElementById("recording").innerHTML = "Stop Recording";
+			document.getElementById("recording").value = "True";
+			if (document.getElementById("type_of_check").value == "load test") {
+				document.getElementById("current_module").style.visibility = "visible";
+				document.getElementById("module_recording_status").style.visibility = "visible";
+				document.getElementById("stopwatch").style.visibility = "visible";
+			}
+			
+			if (document.getElementById("type_of_check").value == "voltage check") {
+				document.getElementById("current_module").style.visibility = "visible";
+				document.getElementById("module_recording_status").style.visibility = "visible";
+			}
+			/*if (document.getElementById("recording").innerHTML == "Starting.." || 
 			document.getElementById("ip_in_control").innerHTML != document.getElementById("your_ip").innerHTML) 
 			{
 				document.getElementById("recording").innerHTML = "Stop Recording";
 				document.getElementById("recording").value = "True";	
-			}
+			}*/
+			
 		} 
 		
 		// Turn off recording
 		else {
 			document.getElementById("recording").innerHTML = "Start Recording";
-			document.getElementById("recording").value = "False";		
+			document.getElementById("recording").value = "False";	
+			document.getElementById("current_module").style.visibility = "hidden";
+			document.getElementById("module_recording_status").style.visibility = "hidden";
+			document.getElementById("stopwatch").style.visibility = "hidden";	
 		}
 	}
 	
@@ -351,10 +393,15 @@ function toggle_recording(js_obj) {
 			document.getElementById("recording").innerHTML = "Starting..";
 			document.getElementById("recording").value = "True";
 				
-			if (document.getElementById("method_to_use").value == "test") {
+			if (document.getElementById("type_of_check").value == "load test") {
 				document.getElementById("current_module").style.visibility = "visible";
 				document.getElementById("module_recording_status").style.visibility = "visible";
 				document.getElementById("stopwatch").style.visibility = "visible";
+			}
+			
+			if (document.getElementById("type_of_check").value == "voltage check") {
+				document.getElementById("current_module").style.visibility = "visible";
+				document.getElementById("module_recording_status").style.visibility = "visible";
 			}
 		} 
 		
@@ -363,11 +410,11 @@ function toggle_recording(js_obj) {
 			document.getElementById("recording").value = "False";
 			document.getElementById("recording").innerHTML = "Stopping..";
 			
-			if (document.getElementById("method_to_use").value == "test") {
-				document.getElementById("current_module").style.visibility = "hidden";
-				document.getElementById("module_recording_status").style.visibility = "hidden";
-				document.getElementById("stopwatch").style.visibility = "hidden";
-			}
+			//if (document.getElementById("method_to_use").value == "load test") {
+			document.getElementById("current_module").style.visibility = "hidden";
+			document.getElementById("module_recording_status").style.visibility = "hidden";
+			document.getElementById("stopwatch").style.visibility = "hidden";
+			//}
 		}
 		update_needed = true;
 	}
@@ -410,6 +457,7 @@ function first_refresh() {
 				toggle_recording(data);
 				toggle_stop_when_target_reached(data);	
 				take_control(data);
+				console.log("completed first refresh")
 			}
 		}
 	});

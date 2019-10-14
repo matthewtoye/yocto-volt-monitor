@@ -6,6 +6,7 @@ Voltage Monitor: a small example on how to use a Yocto-Volt usb module
 
 # import standard functions
 import cherrypy
+import decimal
 import string
 import sys
 import os, os.path
@@ -249,11 +250,11 @@ class voltage_recorder(threading.Thread):
             self._graph_resolution = 5
             self._module_recording_status = "starting"
             self._recording = True
-            if self._method_to_use == "test":
-                self._current_module = 1
+            if self._type_of_check == "load test" or self._method_to_use == "voltage check":
+                self._current_module = 5
             self._stopwatch = 0
             self._module_recording_status = "disabled"
-            if self._method_to_use != "test":
+            if self._type_of_check != "load test" and self._method_to_use == "voltage check":
                 self.plot_graph()       
                 self.sendResult(msg, self._last_value)
         elif status == False:
@@ -289,7 +290,7 @@ class voltage_recorder(threading.Thread):
             if last_recorded_time >= recording_start_time + datetime.timedelta(minutes=target_value):
                 return True
                 
-        elif method == "test":
+        elif method == "load test":
             if last_recorded_time >= recording_start_time + datetime.timedelta(minutes=target_value):
                 return True
                 
@@ -383,17 +384,74 @@ class voltage_recorder(threading.Thread):
         plt.minorticks_on()
         plt.margins(x=0)
         plt.gcf().subplots_adjust(left=0.07, right=0.93, bottom=0.08, top=0.99)
-		
+        
         sp = fig1.add_subplot(111)
         sp.plot(self._recording_data_x, self._recording_data_y, color="red")
         sp.set_ylabel("Voltage")
         sp.set_xlabel("Time (minutes)")
-        
-        for i,j in zip(self._recording_data_label_x, self._recording_data_label_y):
-            sp.annotate('%sV' %j, xy=(i,j), xytext=(5,0), textcoords='offset points')
 
-        fig1.savefig(self._plot_file_location)
+        if self._type_of_check == "load test" or self._type_of_check == "voltage check":
+            mylen = len(self._recording_data_label_x)-1
+            
+            for i,j in zip(self._recording_data_label_x, self._recording_data_label_y):
+                if i == self._recording_data_label_x[0]:
+                    sp.annotate('%sV %sM' % (j, round(i, 1)), xy=(i,j), xytext=(15,-10), textcoords='offset points')
+                    #sp.annotate('FIRST', xy=(i,j), xytext=(15,-5), textcoords='offset points')
+                elif i == self._recording_data_label_x[mylen]:
+                    sp.annotate('%sV %sM' % (j, round(i, 1)), xy=(i,j), xytext=(-25,+10), textcoords='offset points')
+                    #sp.annotate('LAST', xy=(i,j), xytext=(-15,5), textcoords='offset points')
+                else:
+                    sp.annotate('%sV %sM' % (j, round(i, 1)), xy=(i,j), xytext=(15,15), textcoords='offset points')
+            fig1.canvas.draw()
+            
+        else:       
+            fig1.canvas.draw()
+            x_labels = list(sp.get_xticklabels())
+            x1 = float(x_labels[1].get_text().replace(u'\N{MINUS SIGN}', '-'))
+            x2 = float(x_labels[2].get_text().replace(u'\N{MINUS SIGN}', '-'))
+            tick_length = abs(x2 - x1)
+            tick_length = ((tick_length * .9) / 2)
         
+            y_labels = list(sp.get_yticklabels())
+            y1 = float(y_labels[1].get_text().replace(u'\N{MINUS SIGN}', '-'))
+            y2 = float(y_labels[2].get_text().replace(u'\N{MINUS SIGN}', '-'))
+            y_tick_length = abs(y2 - y1)
+            y_tick_length = y_tick_length / 3
+        
+            recording_data_label_x = []
+            recording_data_label_y = []
+        
+            for x in x_labels:
+                if x.get_text() != "":
+                    closest_diff = 999999
+                    closest_val = 999999
+                
+                    x1 = float(x.get_text().replace(u'\N{MINUS SIGN}', '-'))
+               
+                    for x_ in self._recording_data_x:                                 
+                        x2 = x_
+                        diff = abs(x1 - x2)
+                        if diff > tick_length:
+                            continue
+                        
+                        if diff < closest_diff:
+                            #print ("new closest for tick: %s - %s" % (x1, x2))
+                            closest_diff = diff
+                            closest_val = x2
+
+                    if closest_diff != 999999:
+                        my_i = self._recording_data_x.index(closest_val)
+                        recording_data_label_x.append(self._recording_data_x[my_i])
+                        recording_data_label_y.append(self._recording_data_y[my_i])
+                                                
+            if len(recording_data_label_x) > 0:             
+                for i,j in zip(recording_data_label_x, recording_data_label_y):
+                    #sp.annotate('%sV' %j, xy=(i,j), xytext=(5,0), textcoords='offset points')
+                    sp.plot(i, j, 'ro')
+                    sp.text(i, j+y_tick_length, '%sV' %j)
+                
+        fig1.savefig(self._plot_file_location)
+  
         fig2 = plt.figure(figsize=(4.7, 2.6))
         
         plt.minorticks_on()
@@ -494,6 +552,8 @@ class voltage_recorder(threading.Thread):
                 return
             self._last_value = self._volt_sensor.get_currentValue()
             
+            if self._last_value < 0:
+                self._last_value = self._last_value * -1
             # Multiply the last value to account for voltage divider
             #self._last_value = round(self._last_value * 2)
             
@@ -504,7 +564,82 @@ class voltage_recorder(threading.Thread):
             if self._recording:
                 
                 # ONLY used for test mode
-                if self._method_to_use == "test":
+                if self._type_of_check == "load test":
+                    
+                    if self._current_recording_stage == 1:
+                        if abs(self._last_value) > .5:
+                            self._module_recording_status = "Remove leads from module"
+                        else:
+                            self._module_recording_status = "Please Wait"
+                            self._current_recording_stage = 2
+                            
+                    elif self._current_recording_stage == 2:
+                        self._module_recording_status = "Apply leads to next module"
+                        
+                        if self._last_value > 5:
+                            self._current_recording_stage = 3
+                            self._recording_loop_helper = 1
+                            self._module_recording_status = "Please Wait"
+                            self._recording_start_time = datetime.datetime.today()
+                            self.add_new_value(self._last_value, True, True)
+                            
+                    elif self._current_recording_stage == 3:
+                        self._module_recording_status = "plotting first point.."
+                        
+                        if self._recording_loop_helper <= 1:
+                            self._recording_loop_helper += 1
+                            self.add_new_value(self._last_value)
+                        
+                        if self._recording_loop_helper > 1:
+                            self._current_recording_stage = 4
+                            self._module_recording_status = "Please Wait"
+                            
+                    elif self._current_recording_stage == 4:
+                        self._module_recording_status = "Apply load"
+                        
+                        if abs(self._recording_data_y[-1] - self._last_value) > .2:
+                            self._current_recording_stage = 5
+                            
+                            # Set recording start time to last recorded, so we continue where we left off
+                            self._recording_start_time = datetime.datetime.today() + datetime.timedelta(seconds=-10)
+                            print("last x value recorded: %s converted time: %s recording start time: %s" % (float(self._recording_data_label_x[-1]), datetime.timedelta(seconds=-6.3), self._recording_start_time))
+                            
+                            self._stopwatch = 0
+                            self._module_recording_status = "Please Wait"
+                            self.add_new_value(self._last_value, True, True)
+    
+                    elif self._current_recording_stage == 5:
+                        if self._method_to_use == "time":
+                            self._module_recording_status = "Recording for %s minutes" % (self._target_value)
+                        elif self._method_to_use == "voltage":
+                            self._module_recording_status = "Recording until voltage is at %s VDC" % (self._target_value)
+                        self.add_new_value(self._last_value)
+                
+                        # update timer
+                        tmp = datetime.datetime.today() - self._recording_start_time
+                        self._stopwatch = round(tmp.total_seconds(), 2)
+
+                        if self._method_to_use == "time" and self._last_recorded >= self._recording_start_time + datetime.timedelta(minutes=self._target_value) or self._method_to_use == "voltage" and self._last_value <= self._target_value:
+                            self._module_recording_status = "Recording complete. Please Wait"
+                            self.add_new_value(self._last_value, True, True)
+                            self._current_module += 1
+                            self._current_recording_stage = 1
+                            self._recording_loop_helper = 0
+                            self._module_recording_status = "incrementing to next module"
+                            self._target_reached = False
+                            self._recording_data_x = []
+                            self._recording_data_y = []
+                            self._recording_data_label_x = []
+                            self._recording_data_label_y = []
+                            self._highest_value = 0
+                            self._recording_start_time = datetime.datetime.today()
+                            self._highest_value_last_recorded = datetime.datetime.today()
+                            self._highest_value_start_time = datetime.datetime.today()
+                            self._last_recorded = datetime.datetime.today()
+                            self._graph_resolution = 1
+                            self._stopwatch = 0
+
+                elif self._method_to_use == "voltage check":
                     
                     if self._current_recording_stage == 1:
                         if abs(self._last_value) > .5:
@@ -532,50 +667,27 @@ class voltage_recorder(threading.Thread):
                         
                         if self._recording_loop_helper > 5:
                             self._current_recording_stage = 4
-                            self._module_recording_status = "Please Wait"
-                            
+               
                     elif self._current_recording_stage == 4:
-                        self._module_recording_status = "Apply load"
-                        
-                        if abs(self._recording_data_y[-1] - self._last_value) > .2:
-                            self._current_recording_stage = 5
+                        self._module_recording_status = "Recording complete. Please Wait"
+                        self.add_new_value(self._last_value, True, True)
+                        self._current_module += 1
+                        self._current_recording_stage = 1
+                        self._recording_loop_helper = 0
+                        self._module_recording_status = "incrementing to next module"
+                        self._target_reached = False
+                        self._recording_data_x = []
+                        self._recording_data_y = []
+                        self._recording_data_label_x = []
+                        self._recording_data_label_y = []
+                        self._highest_value = 0
+                        self._recording_start_time = datetime.datetime.today()
+                        self._highest_value_last_recorded = datetime.datetime.today()
+                        self._highest_value_start_time = datetime.datetime.today()
+                        self._last_recorded = datetime.datetime.today()
+                        self._graph_resolution = 1
+                        self._stopwatch = 0
                             
-                            # Set recording start time to last recorded, so we continue where we left off
-                            self._recording_start_time = datetime.datetime.today() + datetime.timedelta(seconds=-6.3)
-                            print("last x value recorded: %s converted time: %s recording start time: %s" % (float(self._recording_data_label_x[-1]), datetime.timedelta(seconds=-6.3), self._recording_start_time))
-                            
-                            self._stopwatch = 0
-                            self._module_recording_status = "Please Wait"
-                            self.add_new_value(self._last_value, True, True)
-    
-                    elif self._current_recording_stage == 5:
-                        self._module_recording_status = "Recording for configured time"
-                        self.add_new_value(self._last_value)
-                
-                        # update timer
-                        tmp = datetime.datetime.today() - self._recording_start_time
-                        self._stopwatch = round(tmp.total_seconds(), 2)
-
-                        if self._last_recorded >= self._recording_start_time + datetime.timedelta(minutes=self._target_value):
-                            self._module_recording_status = "Recording complete. Please Wait"
-                            self.add_new_value(self._last_value, True, True)
-                            self._current_module += 1
-                            self._current_recording_stage = 1
-                            self._recording_loop_helper = 0
-                            self._module_recording_status = "incrementing to next module"
-                            self._target_reached = False
-                            self._recording_data_x = []
-                            self._recording_data_y = []
-                            self._recording_data_label_x = []
-                            self._recording_data_label_y = []
-                            self._highest_value = 0
-                            self._recording_start_time = datetime.datetime.today()
-                            self._highest_value_last_recorded = datetime.datetime.today()
-                            self._highest_value_start_time = datetime.datetime.today()
-                            self._last_recorded = datetime.datetime.today()
-                            self._graph_resolution = 1
-                            self._stopwatch = 0
-
                 # If target reached and NOT in test mode
                 elif not self._target_reached and self.checkTargetValue(self._method_to_use, self._last_value, 
                 self._target_value, self._last_recorded, self._recording_start_time, self._highest_value_last_recorded):
@@ -584,7 +696,7 @@ class voltage_recorder(threading.Thread):
                     self._target_reached = True
                     self.plot_graph()
                     self.sendResult(msg, self._last_value)
-                elif counter > 9:
+                elif counter > 5:
                     self.add_new_value(self._last_value)
                     updated = True
             if updated:
