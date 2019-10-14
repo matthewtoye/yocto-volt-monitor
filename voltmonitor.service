@@ -1,0 +1,11 @@
+[Unit]
+ Description=Yocto Voltage Monitor
+ After=multi-user.target
+
+ [Service]
+ Type=idle
+ ExecStart=/usr/bin/python /home/pi/cherry_working/cherry.py
+ WorkingDirectory=/home/pi/cherry_working
+
+ [Install]
+ WantedBy=multi-user.target
